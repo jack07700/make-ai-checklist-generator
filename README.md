@@ -1,2 +1,163 @@
-# make-ai-checklist-generator
-Make.com scenario for generating QA checklists using Google Sheets and Gemini AI (UKR.V1)
+# 🚀 Інструкція з налаштування Make.com сценарію "AI Checklist Generator"
+
+Цей сценарій автоматично створює детальні чек-листи для тестування на основі короткого опису функціоналу. Він використовує Google Sheets як базу даних та Google Gemini як штучний інтелект для генерації контенту.
+
+---
+
+## ✅ Що вам знадобиться
+
+* **Аккаунт Make.com.** Зареєструватися можна тут: **[make.com/en/register](https://www.make.com/en/register)**. Рекомендується використовувати той самий Google аккаунт, що і для Google Sheets та Google AI, щоб спростити підключення.
+* **Аккаунт Google** (для Google Sheets).
+* **API ключ** від Google AI Studio. Його можна безкоштовно згенерувати на сайті **[aistudio.google.com](https://aistudio.google.com)**, натиснувши **"Get API key"** -> **"+ Create API key"**.
+* Файл сценарію **`AI_Cheklist_blueprint.json`**.
+
+---
+
+## 📄 Крок 1: Підготовка Google Таблиці
+
+Перш ніж почати, створіть нову Google Таблицю, яка буде слугувати базою даних для сценарію.
+
+1.  Створіть нову Google Таблицю та назвіть її, наприклад, **`AI Checklists`**.
+2.  Перейменуйте перший аркуш на **`Promt`**.
+3.  У цьому аркуші створіть один заголовок в комірці `A1`: **`Опис функціоналу`**.
+4.  Створіть другий аркуш та перейменуйте його на **`Checklist`**.
+5.  У цьому аркуші створіть наступні заголовки в першому рядку:
+    * `A1`: **`Категорія`**
+    * `B1`: **`Назва перевірки`**
+    * `C1`: **`Статус`**
+    * `D1`: **`Приклад`**
+    * `E1`: **`Очікуваний результат`**
+    * `F1`: **`Коментар`**
+
+---
+
+## ⚙️ Крок 2: Імпорт сценарію в Make.com
+
+1.  Увійдіть у ваш аккаунт **Make.com**.
+2.  Перейдіть у розділ **"Scenarios"** (Сценарії).
+3.  У правому верхньому куті натисніть **"More"** (Більше), а потім — **"Import Blueprint"**.
+4.  Завантажте файл **`AI_Cheklist_blueprint.json`**.
+5.  Відкрийте щойно імпортований сценарій.
+
+---
+
+## 🔌 Крок 3: Налаштування підключень (Connections)
+
+Після імпорту ви побачите, що деякі модулі мають знак попередження. Налаштуйте підключення до ваших сервісів.
+
+### 1. Перший модуль `Google Sheets`
+* Натисніть на перший модуль з іконкою Google Sheets.
+* У полі **"Connection"** натисніть **"Add"** і увійдіть у свій Google аккаунт.
+* У полі **"Spreadsheet"** виберіть вашу щойно створену таблицю `AI Checklists`.
+* У полі **"Sheet"** виберіть аркуш `Promt`.
+* Натисніть **OK**.
+
+### 2. Модуль `Gemini AI`
+* Натисніть на модуль Gemini.
+* У полі **"Connection"** натисніть **"Add"**.
+* У вікні, що з'явиться, вставте ваш **API ключ**, отриманий з Google AI Studio.
+* **У полі `"Model"` переконайтесь, що вибрано саме `gemini 2.5 flash preview 05-20` (або новішу версію `gemini-1.5-flash-latest`).**
+* Натисніть **OK**.
+
+### 3. Фінальний модуль `Google Sheets`
+* Натисніть на останній модуль Google Sheets (`Add a Row`).
+* У полі **"Connection"** виберіть те саме підключення Google, яке ви вже налаштували.
+* У полі **"Spreadsheet"** знову виберіть вашу таблицю `AI Checklists`.
+* У полі **"Sheet"** виберіть аркуш `Checklist`.
+* Натисніть **OK**.
+
+---
+
+## 🔗 Крок 4: Перевірка логіки сценарію (Важливо!)
+
+Переконайтесь, що всі модулі правильно передають дані один одному.
+
+> **Примітка:** Номери модулів (наприклад, `{{4.result}}`) можуть відрізнятися у вашому сценарії. Головне — вибирати змінні з правильного попереднього модуля.
+
+1.  **Модуль `Parse JSON`:**
+    * Переконайтесь, що в полі `JSON string` вказана змінна `result` з модуля **Gemini**.
+    * Переконайтесь, що поле `Data structure` **порожнє**.
+
+2.  **Модуль `Iterator`:**
+    * Переконайтесь, що між `Parse JSON` та фінальним `Add a Row` є модуль **`Flow Control > Iterator`**.
+    * Переконайтесь, що в полі `Array` вказана змінна `data` з модуля **`Parse JSON`**.
+
+3.  **Модуль `Google Sheets: Add a Row`:**
+    * Перейдіть до секції `Values`.
+    * Переконайтесь, що дані для стовпців беруться з **ІТЕРАТОРА**. Наприклад:
+        * `Категорія (A)`: `{{...value.category}}`
+        * `Назва перевірки (B)`: `{{...value.check_name}}`
+        * `Приклад (D)`: `{{...value.example}}`
+        * `Очікуваний результат (E)`: `{{...value.expected_result}}`
+
+---
+
+## ▶️ Крок 5: Тестовий запуск
+
+1.  **Збережіть** сценарій (іконка дискети внизу).
+2.  Перейдіть у вашу Google Таблицю в аркуш **`Promt`**.
+3.  У стовпець **`Опис функціоналу`** додайте ваш перший запит (наприклад, `Створити чек-лист для сторінки входу з полями email та пароль`).
+4.  Поверніться в Make.com і натисніть кнопку **"Run once"**.
+5.  Перевірте аркуш **`Checklist`** у вашій Google Таблиці. Там мають з'явитися нові рядки з вашим чек-листом.
+
+**Вітаємо, ваш автоматичний генератор чек-листів налаштовано!**
+
+---
+
+## 🔧 Додаткові налаштування
+
+### 🌐 Як змінити мову на англійську?
+
+Штучний інтелект генерує результат тією мовою, якою написані його основні інструкції (промт). Щоб отримувати чек-листи англійською, вам потрібно просто замінити україномовний промт на англомовний аналог.
+
+**Що потрібно зробити:**
+
+1.  У вашому сценарії Make.com натисніть на модуль **`Gemini AI`**.
+2.  Знайдіть перше повідомлення з роллю **`Model`**.
+3.  Повністю **видаліть** поточний україномовний текст з цього поля.
+4.  **Скопіюйте і вставте** на його місце весь англомовний промт, наведений нижче:
+
+```text
+++++++ Role & Persona:
+You are a meticulous and detail-oriented Senior QA Engineer with 15 years of experience. Your team knows you as the expert who finds bugs nobody else notices. Your motto is: "If something can be broken, a user will break it." You don't just follow requirements; you think about business logic, user experience, and potential attack vectors. You prioritize product quality above all else.
+
+++++++ Core Task:
+Analyze the user's feature description and generate a comprehensive checklist for testing. The result must be of such high quality that it can be immediately passed to the testing team without significant edits.
+
+++++++ Internal Thought Process (You must follow this process but DO NOT show it in the final output):
+1.  **Deconstruct the Feature:** Break down the described functionality into key components and User Flows.
+2.  **Brainstorm Categories:** Determine which testing categories are most relevant here (Functional, UI/UX, Security, Performance, API, etc.).
+3.  **Critical Thinking & Red Teaming:** For each component and scenario, ask yourself:
+    - "What if I enter completely unexpected data?" (negative tests).
+    - "What if I perform actions in the wrong order?".
+    - "How can I abuse this functionality?" (security tests).
+    - "What would annoy a user in this interface?" (usability tests).
+4.  **Structure the Output:** Assemble all ideas into a structured JSON array, following the formatting rules below. Ensure the most critical and risky checks come first.
+
+++++++ Output Format Rules:
+- The output MUST be a valid JSON array of objects. No other text or explanations.
+- Each object MUST contain the keys: "category", "check_name", "example", "expected_result".
+- You MUST NOT include the keys "status" or "comment".
+
+++++++ "Gold Standard" Examples (Aim for this level of quality and detail):
+
+### Example 1: Perfect Negative Functional Test
+{
+  "category": "Functional",
+  "check_name": "Attempt to submit a form with a future date of birth",
+  "example": "In the user profile form, set the 'Date of Birth' field to tomorrow's date.",
+  "expected_result": "1. A validation message 'Date of birth cannot be in the future' appears below the date field. 2. The form data is not saved."
+}
+
+### Example 2: Perfect Security Test
+{
+  "category": "Security",
+  "check_name": "Verify that authorization can't be bypassed via direct URL access",
+  "example": "Copy the URL for the '/admin/dashboard' page, log out of the admin account, and try to navigate to this URL.",
+  "expected_result": "1. The user is redirected to the login page. 2. Access to '/admin/dashboard' is denied."
+}
+```
+---
+<br>
+
+<center><h3>✍️ Створено by **jack07700**</h3></center>
